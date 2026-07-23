@@ -1,0 +1,6 @@
+# No third-party packages required.
+# The whole toolkit (JWT analyzer/cracker, TLS/cert, CORS, cookies, GUI, CLI)
+# uses only the Python standard library (hmac, hashlib, ssl, urllib, socket).
+#
+# Requirements:
+#   - Python 3.8+
