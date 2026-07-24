@@ -68,6 +68,9 @@ def analyze(url: str, timeout: float = 10.0) -> CORSReport:
         if acao == "null" and origin == "null":
             report.issues.append("trusts Origin: null"
                                  + (" WITH credentials (critical)" if creds else ""))
-        if acao == "*" and creds:
-            report.issues.append("wildcard ACAO combined with credentials")
+
+    # wildcard + credentials is origin-independent -> report it at most once
+    if any(acao == "*" and (acac or "").lower() == "true"
+           for _o, acao, acac in report.tests):
+        report.issues.append("wildcard ACAO combined with credentials")
     return report
