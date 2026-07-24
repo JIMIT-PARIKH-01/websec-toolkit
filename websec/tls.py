@@ -10,11 +10,10 @@ from __future__ import annotations
 
 import socket
 import ssl
+import time
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
 
 WEAK_PROTOCOLS = {"SSLv2", "SSLv3", "TLSv1", "TLSv1.1"}
-_CERT_TIME_FMT = "%b %d %H:%M:%S %Y %Z"
 
 
 @dataclass
@@ -50,7 +49,7 @@ class TLSReport:
 
 def _name(pairs) -> str:
     d = {k: v for rdn in (pairs or ()) for (k, v) in rdn}
-    return d.get("commonName") or d.get("organizationName") or str(d)
+    return d.get("commonName") or d.get("organizationName") or (str(d) if d else "")
 
 
 def _grab_unverified(host: str, port: int, timeout: float, report: "TLSReport") -> None:
@@ -97,16 +96,22 @@ def analyze(host: str, port: int = 443, timeout: float = 10.0) -> TLSReport:
     report.issuer = _name(cert.get("issuer"))
     report.sans = [v for (t, v) in cert.get("subjectAltName", ()) if t == "DNS"]
     report.not_after = cert.get("notAfter", "")
-    try:
-        exp = datetime.strptime(report.not_after, _CERT_TIME_FMT).replace(tzinfo=timezone.utc)
-        report.days_left = (exp - datetime.now(timezone.utc)).days
-    except ValueError:
-        report.days_left = 0
+    # ssl.cert_time_to_seconds parses OpenSSL cert timestamps locale-independently
+    # (datetime.strptime("%b …") would fail on non-English locales).
+    parsed_days = None
+    if report.not_after:
+        try:
+            expires = ssl.cert_time_to_seconds(report.not_after)
+            report.days_left = int((expires - time.time()) // 86400)
+            parsed_days = report.days_left
+        except (ValueError, OSError):
+            report.issues.append("could not parse certificate expiry date")
 
-    if report.days_left < 0:
-        report.issues.append("certificate is EXPIRED")
-    elif report.days_left < 15:
-        report.issues.append(f"certificate expires soon ({report.days_left} days)")
+    if parsed_days is not None:
+        if parsed_days < 0:
+            report.issues.append("certificate is EXPIRED")
+        elif parsed_days < 15:
+            report.issues.append(f"certificate expires soon ({parsed_days} days)")
     if report.protocol in WEAK_PROTOCOLS:
         report.issues.append(f"weak/deprecated protocol negotiated: {report.protocol}")
     if report.subject and report.subject == report.issuer:

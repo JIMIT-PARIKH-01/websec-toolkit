@@ -94,8 +94,11 @@ def analyze(token: str, wordlist=None) -> JWTReport:
         issues.append(f"{alg} (HMAC) - forgeable if the secret is weak; try cracking it")
 
     if "exp" in payload:
-        if float(payload["exp"]) < time.time():
-            issues.append("token is EXPIRED (exp is in the past)")
+        try:
+            if float(payload["exp"]) < time.time():
+                issues.append("token is EXPIRED (exp is in the past)")
+        except (TypeError, ValueError):
+            issues.append("'exp' claim is present but not a valid timestamp")
     else:
         issues.append("no 'exp' claim - token does not expire")
 
