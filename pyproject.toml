@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "websec-toolkit"
+version = "1.0.0"
+description = "Web-app security: JWT analyzer/cracker, TLS/cert, CORS, cookies (GUI + CLI)"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [{ name = "Jimit Devangkumar Parikh" }]
+
+[project.urls]
+Homepage = "https://github.com/JIMIT-PARIKH-01/websec-toolkit"
+
+[project.scripts]
+websec = "websec.cli:main"
+
+[tool.setuptools]
+packages = ["websec"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
