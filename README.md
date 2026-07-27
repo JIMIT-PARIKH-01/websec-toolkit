@@ -19,6 +19,8 @@ Built on the Python standard library only (`hmac`, `hashlib`, `ssl`, `urllib`).
 
 ---
 
+![demo](docs/demo.png)
+
 ## ⚠️ Authorized use only
 
 Analyze **your own** tokens and sites, or targets you have explicit permission to test.
